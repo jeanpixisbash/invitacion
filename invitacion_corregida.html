@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación de Cumpleaños</title>
+    <!-- Fuente elegante para el botón y detalles -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           VARIABLES Y CONFIGURACIÓN GENERAL
+           ========================================= */
+        :root {
+            --bg-color: #1a0f14; /* Color de fondo oscuro y elegante */
+            --envelope-color: #e6dacc; /* Color del papel del sobre */
+            --envelope-dark: #c4b5a2; /* Sombras del sobre */
+            --card-width: 160px;
+            --card-height: 240px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #4b0000;
+            background-image: url('image(2).png');
+            background-repeat: repeat;
+            background-size: auto;
+            background-position: center;
+            font-family: 'Playfair Display', serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* =========================================
+           BOTÓN DE ABRIR
+           ========================================= */
+        #openBtn {
+            position: absolute;
+            bottom: 10%;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        #openBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        #openBtn.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+
+        /* =========================================
+           CONTENEDOR DEL SOBRE Y ESCENA 3D
+           ========================================= */
+        .scene {
+            position: relative;
+            width: 320px;
+            height: 220px;
+            perspective: 1200px; /* Da profundidad a la apertura de la solapa */
+            margin-top: 150px; /* Espacio superior para que salgan las cartas */
+            transition: transform 0.5s ease;
+        }
+
+        /* Ajuste para pantallas pequeñas (móviles) */
+        @media (max-width: 600px) {
+            .scene {
+                transform: scale(0.8);
+                margin-top: 100px;
+            }
+        }
+
+        .envelope {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-color);
+            border-radius: 5px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            transform-style: preserve-3d;
+            /* Las cartas permanecen completamente ocultas mientras el sobre está cerrado */
+            overflow: hidden;
+        }
+
+        /* Parte trasera del sobre (Interior) */
+        .envelope-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-dark);
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        /* Solapa superior que se abre */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background-color: var(--envelope-color);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top;
+            transition: transform 0.6s ease-in-out;
+            z-index: 4;
+            /* Sombra interna para dar volumen */
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.1) 100%);
+        }
+
+        /* Parte frontal del sobre (Bolsillo) */
+        .envelope-front {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-color);
+            clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 65%, 0 30%);
+            z-index: 3;
+            background-image: linear-gradient(to top, rgba(0,0,0,0.05) 0%, rgba(255,255,255,0.1) 100%);
+        }
+
+        /* =========================================
+           CARTAS Y SUS ANIMACIONES
+           ========================================= */
+        .cards-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: var(--card-width);
+            height: var(--card-height);
+            z-index: 2; /* Entre la parte trasera y frontal del sobre */
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+        }
+
+        .card {
+            position: absolute;
+            bottom: -20px; /* Permanecen dentro del sobre antes de salir */
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid #eaeaea;
+        }
+
+        /* Contenedor de la imagen de la carta */
+        .card-image {
+            width: 100%;
+            height: 100%;
+            background-color: #f7f1e3; /* Color crema por defecto */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* ESTADO ABIERTO: El sobre se abre y las cartas salen */
+        .scene.is-open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 0; /* Se va hacia atrás para no estorbar a las cartas */
+        }
+
+        /* Solo después de iniciar la apertura se permiten ver las cartas. */
+        .scene.is-open .envelope {
+            overflow: visible;
+        }
+
+        .scene.is-open .cards-container {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.25s ease 0.35s, visibility 0s linear 0.35s;
+        }
+
+        /* Animación en abanico para cada carta. 
+           Uso transition-delay para que salgan una a una */
+        
+        .scene.is-open .card:nth-child(1) {
+            transform: translate(-130px, -180px) rotate(-20deg);
+            transition-delay: 0.5s;
+        }
+        
+        .scene.is-open .card:nth-child(2) {
+            transform: translate(-65px, -210px) rotate(-10deg);
+            transition-delay: 0.7s;
+        }
+        
+        .scene.is-open .card:nth-child(3) {
+            transform: translate(0px, -220px) rotate(0deg);
+            transition-delay: 0.9s;
+        }
+        
+        .scene.is-open .card:nth-child(4) {
+            transform: translate(65px, -210px) rotate(10deg);
+            transition-delay: 1.1s;
+        }
+        
+        .scene.is-open .card:nth-child(5) {
+            transform: translate(130px, -180px) rotate(20deg);
+            transition-delay: 1.3s;
+        }
+
+        /* Efecto Hover (pasar el ratón) para saber que son clickeables una vez abiertas */
+        .scene.is-open .card:hover:not(.active) {
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.4);
+            filter: brightness(1.1);
+        }
+
+        /* ESTADO ACTIVO (Al hacer click en una carta específica para verla de cerca) */
+        .card.active {
+            z-index: 100 !important;
+            transform: translate(0px, -250px) scale(1.6) rotate(0deg) !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            transition-delay: 0s !important; /* Animación instantánea al hacer click */
+        }
+
+        /* Ajuste de carta activa para móviles */
+        @media (max-width: 600px) {
+            .card.active {
+                transform: translate(0px, -200px) scale(1.4) rotate(0deg) !important;
+            }
+        }
+
+        /* Texto de ayuda que aparece cuando las cartas salen */
+        #helpText {
+            position: absolute;
+            bottom: 25%;
+            color: #d4af37;
+            font-size: 1.1rem;
+            opacity: 0;
+            transition: opacity 1s ease;
+            transition-delay: 2s; /* Aparece después de que salgan las cartas */
+            pointer-events: none;
+            text-align: center;
+        }
+        .scene.is-open ~ #helpText {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Escena principal que contiene el sobre y las cartas -->
+    <div class="scene" id="invitationScene">
+        <div class="envelope">
+            <div class="envelope-back"></div>
+            
+            <!-- Contenedor de las 5 Cartas -->
+            <div class="cards-container">
+                <!-- Carta 1 -->
+                <div class="card">
+                    <!-- INSTRUCCIÓN: Cambia la URL dentro de url() por la imagen recortada de tu primera carta -->
+                    <div class="card-image" style="background-image: url('image_3df4f6.jpg');"></div>
+                </div>
+                <!-- Carta 2 -->
+                <div class="card">
+                    <!-- INSTRUCCIÓN: Cambia la URL por la imagen recortada de tu segunda carta -->
+                    <div class="card-image" style="background-image: url('image_3df4f6.jpg');"></div>
+                </div>
+                <!-- Carta 3 -->
+                <div class="card">
+                    <!-- INSTRUCCIÓN: Cambia la URL por la imagen recortada de tu tercera carta -->
+                    <div class="card-image" style="background-image: url('image_3df4f6.jpg');"></div>
+                </div>
+                <!-- Carta 4 -->
+                <div class="card">
+                    <!-- INSTRUCCIÓN: Cambia la URL por la imagen recortada de tu cuarta carta -->
+                    <div class="card-image" style="background-image: url('image_3df4f6.jpg');"></div>
+                </div>
+                <!-- Carta 5 -->
+                <div class="card">
+                    <!-- INSTRUCCIÓN: Cambia la URL por la imagen recortada de tu quinta carta -->
+                    <div class="card-image" style="background-image: url('image_3df4f6.jpg');"></div>
+                </div>
+            </div>
+
+            <div class="envelope-front"></div>
+            <div class="envelope-flap"></div>
+        </div>
+    </div>
+
+    <!-- Mensaje de ayuda que aparecerá después de la animación -->
+    <p id="helpText">Toca una carta para verla de cerca</p>
+
+    <!-- Botón de acción -->
+    <button id="openBtn">Abrir Invitación</button>
+
+    <script>
+        // Referencias a los elementos del DOM (HTML)
+        const btnOpen = document.getElementById('openBtn');
+        const scene = document.getElementById('invitationScene');
+        const cards = document.querySelectorAll('.card');
+
+        // Evento al hacer click en el botón "Abrir Invitación"
+        btnOpen.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que el click se propague al body
+            
+            // Añade la clase 'is-open' que dispara todas las animaciones CSS
+            scene.classList.add('is-open');
+            
+            // Oculta el botón suavemente
+            btnOpen.classList.add('hidden');
+        });
+
+        // Evento para cada carta (Galería interactiva)
+        cards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Si el sobre aún no está abierto, no hacer nada
+                if (!scene.classList.contains('is-open')) return;
+                
+                e.stopPropagation(); // Evita que se cierre inmediatamente por el evento del body
+
+                // Si la carta ya está activa, la desactivamos (la devolvemos al abanico)
+                if (card.classList.contains('active')) {
+                    card.classList.remove('active');
+                } else {
+                    // Si no está activa, quitamos la clase 'active' de todas las demás...
+                    cards.forEach(c => c.classList.remove('active'));
+                    // ...y se la agregamos a la carta clickeada para hacerla grande
+                    card.classList.add('active');
+                }
+            });
+        });
+
+        // Si el usuario hace click en cualquier otra parte de la pantalla (fuera de las cartas),
+        // devolvemos la carta activa a su posición original en el abanico.
+        document.body.addEventListener('click', () => {
+            cards.forEach(c => c.classList.remove('active'));
+        });
+    </script>
+</body>
+</html>

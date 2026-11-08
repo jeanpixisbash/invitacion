@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación de Cumpleaños</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #1a0f14;
+            --envelope-color: #e6dacc;
+            --envelope-dark: #c4b5a2;
+            --card-width: 160px;
+            --card-height: 240px;
+            --naipe-cream: #f2e8d8;
+            --naipe-red: #8b1a1a;
+            --gold: #d4af37;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #4b0000;
+            background-image: linear-gradient(rgba(75,0,0,0.86), rgba(75,0,0,0.86)), url('IMG-20261107-WA0015.jpg');
+            background-size: cover, 300%;
+            background-position: center, 0% 100%;
+            font-family: 'Playfair Display', serif;
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #openBtn {
+            position: absolute;
+            bottom: 10%;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        #openBtn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(212,175,55,0.4); }
+        #openBtn.hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+
+        .scene {
+            position: relative;
+            width: 320px;
+            height: 220px;
+            perspective: 1200px;
+            margin-top: 150px;
+            transition: transform 0.5s ease;
+        }
+        @media (max-width: 600px) {
+            .scene { transform: scale(0.8); margin-top: 100px; }
+        }
+
+        .envelope {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-color);
+            border-radius: 5px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            transform-style: preserve-3d;
+            overflow: hidden;
+        }
+        .envelope-back {
+            position: absolute; width: 100%; height: 100%;
+            background-color: var(--envelope-dark); border-radius: 5px; z-index: 1;
+        }
+        .envelope-flap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 65%;
+            background-color: var(--envelope-color);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top;
+            transition: transform 0.6s ease-in-out;
+            z-index: 4;
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.1) 100%);
+        }
+        /* Sello de cera sobre la bolsa frontal (fuera de la solapa, para que no lo recorte) */
+        .wax-seal {
+            position: absolute;
+            top: 58%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 58px; height: 58px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #a32020, #6e0d0d 70%);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.45), inset 0 2px 4px rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            color: #f2e8d8; font-family: 'Playfair Display', serif;
+            font-size: 1.05rem; font-weight: 700; letter-spacing: 1px;
+            border: 2px solid rgba(0,0,0,0.15);
+            z-index: 5;
+        }
+        .envelope-front {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--envelope-color);
+            clip-path: polygon(0 100%, 100% 100%, 100% 30%, 50% 65%, 0 30%);
+            z-index: 3;
+            background-image: linear-gradient(to top, rgba(0,0,0,0.05) 0%, rgba(255,255,255,0.1) 100%);
+        }
+
+        .cards-container {
+            position: absolute; top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: var(--card-width); height: var(--card-height);
+            z-index: 2; opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+        }
+
+        .card {
+            position: absolute; bottom: -20px; left: 0;
+            width: 100%; height: 100%;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.8s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid #eaeaea;
+        }
+        .card-image {
+            width: 100%; height: 100%;
+            background-color: #f7f1e3;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .scene.is-open .envelope-flap { transform: rotateX(180deg); z-index: 0; }
+        .scene.is-open .envelope { overflow: visible; }
+        .scene.is-open .cards-container {
+            opacity: 1; visibility: visible; pointer-events: auto;
+            transition: opacity 0.25s ease 0.35s, visibility 0s linear 0.35s;
+        }
+
+        .scene.is-open .card:nth-child(1) { transform: translate(-150px,-180px) rotate(-25deg); transition-delay: 0.4s; }
+        .scene.is-open .card:nth-child(2) { transform: translate(-90px,-207px) rotate(-15deg); transition-delay: 0.55s; }
+        .scene.is-open .card:nth-child(3) { transform: translate(-30px,-222px) rotate(-5deg); transition-delay: 0.7s; }
+        .scene.is-open .card:nth-child(4) { transform: translate(30px,-222px) rotate(5deg); transition-delay: 0.85s; }
+        .scene.is-open .card:nth-child(5) { transform: translate(90px,-207px) rotate(15deg); transition-delay: 1.0s; }
+        .scene.is-open .card:nth-child(6) { transform: translate(150px,-180px) rotate(25deg); transition-delay: 1.15s; }
+
+        .scene.is-open .card:hover:not(.active) {
+            box-shadow: 0 10px 20px rgba(255,215,0,0.4);
+            filter: brightness(1.1);
+        }
+        .card.active {
+            z-index: 100 !important;
+            transform: translate(0px,-250px) scale(1.6) rotate(0deg) !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            transition-delay: 0s !important;
+            cursor: default;
+        }
+        @media (max-width: 600px) {
+            .card.active { transform: translate(0px,-200px) scale(1.4) rotate(0deg) !important; }
+        }
+
+        /* ========= CARTAS CSS (ubicación y confirmación) ========= */
+        .card-naipe {
+            width: 100%; height: 100%;
+            background-color: var(--naipe-cream);
+            position: relative;
+            font-family: 'Caveat', cursive;
+            color: #2b2b2b;
+            border: none;
+        }
+        .card-naipe::before {
+            content: '';
+            position: absolute; inset: 9px;
+            border: 2px solid var(--naipe-red);
+            outline: 1px solid var(--naipe-red);
+            outline-offset: 3px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+        .corner { position: absolute; font-family: 'Playfair Display', serif; font-weight: 700; color: var(--naipe-red); line-height: 0.9; text-align: center; pointer-events: none; }
+        .corner .suit { display: block; font-size: 1rem; }
+        .corner.tl { top: 10px; left: 11px; font-size: 1.05rem; }
+        .corner.br { bottom: 10px; right: 11px; font-size: 1.05rem; transform: rotate(180deg); }
+
+        .naipe-body {
+            position: absolute; inset: 22px 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 3px; text-align: center;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .naipe-body h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.78rem; color: var(--naipe-red);
+            letter-spacing: 0.5px; margin-bottom: 1px;
+        }
+        .naipe-text { font-size: 1rem; line-height: 1.08; }
+
+        .btn-mini {
+            display: inline-block;
+            margin-top: 3px;
+            padding: 4px 11px;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.62rem;
+            color: #fff;
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+        .btn-mini:hover { filter: brightness(1.1); transform: scale(1.04); }
+
+        .maps-frame {
+            width: 100%; height: 66px;
+            border: 1px solid var(--naipe-red);
+            border-radius: 4px;
+            pointer-events: auto;
+        }
+
+        /* Cinta con la hora sobre la carta de fecha */
+        .card .hora-badge {
+            position: absolute;
+            left: 50%; bottom: 26px;
+            transform: translateX(-50%);
+            background: var(--naipe-red);
+            color: #f2e8d8;
+            font-family: 'Caveat', cursive;
+            font-size: 1rem;
+            padding: 1px 16px 2px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        #helpText {
+            position: absolute; bottom: 25%;
+            color: #d4af37; font-size: 1.1rem;
+            opacity: 0; transition: opacity 1s ease 2s;
+            pointer-events: none; text-align: center;
+            font-family: 'Playfair Display', serif;
+        }
+        .scene.is-open ~ #helpText { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="scene" id="invitationScene">
+    <div class="envelope">
+        <div class="envelope-back"></div>
+
+        <div class="cards-container">
+            <!-- 1. INVITACIÓN (A♠) -->
+            <div class="card">
+                <div class="card-image" style="background-image:url('IMG-20261107-WA0010.jpg');"></div>
+            </div>
+
+            <!-- 2. FECHA (Q♥) -->
+            <div class="card">
+                <div class="card-image" style="background-image:url('IMG-20261107-WA0012.jpg');"></div>
+                <span class="hora-badge">7:00 p.m.</span>
+            </div>
+
+            <!-- 3. DRESS CODE (K♦) -->
+            <div class="card">
+                <div class="card-image" style="background-image:url('IMG-20261107-WA0013.jpg');"></div>
+            </div>
+
+            <!-- 4. LLUVIA DE SOBRES (J♣ foto) -->
+            <div class="card">
+                <div class="card-image" style="background-image:url('IMG-20261107-WA0011.jpg');"></div>
+            </div>
+
+            <!-- 5. UBICACIÓN (10♠) — carta CSS con pin real + minimapa + Google Maps -->
+            <div class="card">
+                <div class="card-naipe">
+                    <div class="corner tl">10<span class="suit">♠</span></div>
+                    <div class="corner br">10<span class="suit">♠</span></div>
+                    <div class="naipe-body">
+                        <h3>¿Dónde?</h3>
+                        <div class="naipe-text">Toca el mapa para ver<br>el punto exacto</div>
+                        <iframe class="maps-frame"
+                            src="https://maps.google.com/maps?q=11.2402231,-74.1166777&z=16&output=embed"
+                            loading="lazy" title="Mapa"></iframe>
+                        <a class="btn-mini" target="_blank" rel="noopener"
+                           href="https://maps.app.goo.gl/21qr2kxyUk6wNPtP6?g_st=aw">Abrir en Google Maps</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. CONFIRMACIÓN (9♥) — carta CSS con link al forms -->
+            <div class="card">
+                <div class="card-naipe">
+                    <div class="corner tl">9<span class="suit">♥</span></div>
+                    <div class="corner br">9<span class="suit">♥</span></div>
+                    <div class="naipe-body">
+                        <h3>El Joker pide palabra</h3>
+                        <div class="naipe-text">Confirmanos tu<br>asistencia</div>
+                        <a class="btn-mini" target="_blank" rel="noopener"
+                           href="https://canva.link/g66gf2h2libl5ke">Confirmar asistencia</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="envelope-front"></div>
+        <div class="envelope-flap"></div>
+        <div class="wax-seal">A·D</div>
+    </div>
+</div>
+
+<p id="helpText">Toca una carta para verla de cerca</p>
+<button id="openBtn">Abrir Invitación</button>
+
+<script>
+    const btnOpen = document.getElementById('openBtn');
+    const scene = document.getElementById('invitationScene');
+    const cards = document.querySelectorAll('.card');
+
+    btnOpen.addEventListener('click', (e) => {
+        e.stopPropagation();
+        scene.classList.add('is-open');
+        btnOpen.classList.add('hidden');
+    });
+
+    // Devuelve una carta al abanico SIN el delay de su posición (evita el "corte feo")
+    function devolverCarta(c) {
+        if (!c.classList.contains('active')) return;
+        c.style.transitionDelay = '0s';
+        c.classList.remove('active');
+        setTimeout(() => { c.style.transitionDelay = ''; }, 900);
+    }
+
+    cards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (!scene.classList.contains('is-open')) return;
+            e.stopPropagation();
+            if (card.classList.contains('active')) return; // en cartas con botones, no se desactiva al re-clickear
+            cards.forEach(c => devolverCarta(c));
+            card.classList.add('active');
+        });
+    });
+
+    document.body.addEventListener('click', () => {
+        cards.forEach(c => devolverCarta(c));
+    });
+
+    // los botones/enlaces dentro de las cartas no cierran la carta
+    document.querySelectorAll('.card a, .card .btn-mini').forEach(el => {
+        el.addEventListener('click', ev => ev.stopPropagation());
+    });
+</script>
+</body>
+</html>
